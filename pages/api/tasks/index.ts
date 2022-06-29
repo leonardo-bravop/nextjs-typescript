@@ -1,19 +1,37 @@
 import { NextApiRequest, NextApiResponse } from "next"
 import { conn } from "../../../utils/database"
 
-const task = (req: NextApiRequest, res: NextApiResponse) => {
+const task = async (req: NextApiRequest, res: NextApiResponse) => {
 
     const { method, body } = req
 
     switch (method) {
         case 'GET':
-            return res.status(200).json('gettin tasks')
+            try {
+                const query = 'SELECT * FROM tasks'
+                const response = await conn.query(query)
 
+                return res.status(200).json(response.rows)
+
+            } catch (error: any) {
+                return res.status(400).json({ error: error.message })
+            }
         case 'POST':
-            const { title, description } = body
+            try {
+                const { title, description } = body
 
-            return res.status(201).json('post a task')
+                const query = `INSERT INTO tasks(title, description) VALUES ($1, $2) RETURNING *`
+                const values = [title, description]
 
+                const response = await conn.query(query, values)
+
+                console.log(response);
+
+                return res.status(201).json(response.rows)
+
+            } catch (error) {
+                console.error(error);
+            }
         default:
             return res.status(400).json('invalid method');
     }
